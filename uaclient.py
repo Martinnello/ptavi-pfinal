@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-"""Programa cliente que abre un socket a un servidor."""
+"""Programa User Agent Cliente."""
 
 import sys
 import socket
@@ -10,7 +10,7 @@ from xml.sax.handler import ContentHandler
 
 
 try:
-    Config_File = sys.argv[1]
+    CONFIG_FILE = sys.argv[1]
     METHOD = str.upper(sys.argv[2])
     OPTION = sys.argv[3]
 #except FileNotFoundError:
@@ -19,7 +19,8 @@ except IndexError:
     sys.exit(" Usage: python uaclient.py config method opcion ")
 
 
-class XmlHandler(ContentHandler):    # Handler para manejar configuración en xml
+"""Handler para manejar configuración en xml."""
+class XmlHandler(ContentHandler):    
 
     def __init__(self):
         self.List = []
@@ -30,7 +31,8 @@ class XmlHandler(ContentHandler):    # Handler para manejar configuración en xm
                          "log": ['path'],
                          "audio": ['path'],}
 
-    def startElement(self, name, attrs):      # Añade atributos a la lista
+    """Añade atributos a la lista."""
+    def startElement(self, name, attrs):
 
         if name in self.Dicc_Xml:
             Dicc_Atr = {}
@@ -40,37 +42,47 @@ class XmlHandler(ContentHandler):    # Handler para manejar configuración en xm
 
             self.List.append([name, Dicc_Atr])
 
-    def get_tags(self):                     # Devuelve la lista de atributos
+    """Devuelve la lista de atributos."""
+    def get_tags(self):
             return (self.List)
+
 
 if __name__ == "__main__":
 
     parser = make_parser()
-    cHandler = XmlHandler()
-    parser.setContentHandler(cHandler)
-    parser.parse(open(Config_File))
-    Config = cHandler.get_tags()
-    print(Config)
+    Handler = XmlHandler()
+    parser.setContentHandler(Handler)
+    parser.parse(open(CONFIG_FILE))
+    Config = Handler.get_tags()
 
     user = Config [0][1]['username']
-    print(user)
     password = Config [0][1]['passwd']
-    print(password)
     ua_ip = Config [1][1]['ip']
-    print(ua_ip)
     ua_port = Config [1][1]['puerto']
-    print(ua_port)
     rtp_port = Config [2][1]['puerto']
-    print(rtp_port)
     proxy_ip = Config [3][1]['ip']
-    print(proxy_ip)
     proxy_port = Config [3][1]['puerto']
-    print(proxy_port)
     log_path = Config [4][1]['path']
-    print(log_path)
     mp3_path = Config [5][1]['path']
-    print(mp3_path)
 
+
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
+    my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    my_socket.connect((proxy_ip, proxy_port))
+
+    if METHOD == "REGISTER"
+    if METHOD == "INVITE"
+    if METHOD == "BYE"
+
+    my_socket.send(bytes(METHOD + Mess, 'utf-8') + b'\r\n')
+
+
+    data = my_socket.recv(1024)
+    Reply = data.decode('utf-8').split()
+
+    if METHOD == "REGISTER"
+    if METHOD == "INVITE"
+    if METHOD == "BYE"
 
 
 
