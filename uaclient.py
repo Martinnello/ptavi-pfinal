@@ -12,93 +12,96 @@ from xml.sax.handler import ContentHandler
 try:
     CONFIG_FILE = sys.argv[1]
     METHOD = str.upper(sys.argv[2])
-    OPTION = sys.argv[3]
-#except FileNotFoundError:
-#    sys.exit("   File not found!")
+    OPTION = str(sys.argv[3])
+
 except IndexError:
-    sys.exit(" Usage: python uaclient.py config method opcion ")
+    sys.exit("  Usage: python3 uaclient.py config method option ")
 
 
 """Handler para manejar configuración en xml."""
 class XmlHandler(ContentHandler):    
 
     def __init__(self):
-        self.List = []
+        self.Atributos = {}
         self.Dicc_Xml = {"account": ['username', 'passwd'],
                          "uaserver": ['ip', 'puerto'],
                          "rtpaudio": ['puerto'],
                          "regproxy": ['ip', 'puerto'],
                          "log": ['path'],
-                         "audio": ['path'],}
+                         "audio": ['path']}
 
     """Añade atributos a la lista."""
     def startElement(self, name, attrs):
 
         if name in self.Dicc_Xml:
-            Dicc_Atr = {}
-
             for atr in self.Dicc_Xml[name]:
-                Dicc_Atr[atr] = attrs.get(atr, "")
-
-            self.List.append([name, Dicc_Atr])
+                self.Atributos[name + "_" + atr] = attrs.get(atr, "")
 
     """Devuelve la lista de atributos."""
     def get_tags(self):
-            return (self.List)
+            return (self.Atributos)
 
 
 if __name__ == "__main__":
 
-    parser = make_parser()
-    Handler = XmlHandler()
-    parser.setContentHandler(Handler)
-    parser.parse(open(CONFIG_FILE))
-    Config = Handler.get_tags()
+    try:
+        parser = make_parser()
+        Handler = XmlHandler()
+        parser.setContentHandler(Handler)
+        parser.parse(open(CONFIG_FILE))
+        Config = Handler.get_tags()
 
-    user = Config [0][1]['username']
-    password = Config [0][1]['passwd']
-    ua_ip = Config [1][1]['ip']
-    ua_port = Config [1][1]['puerto']
-    rtp_port = Config [2][1]['puerto']
-    proxy_ip = Config [3][1]['ip']
-    proxy_port = Config [3][1]['puerto']
-    log_path = Config [4][1]['path']
-    mp3_path = Config [5][1]['path']
+    except FileNotFoundError:
+        sys.exit('  File not found!')
 
+    USER = Config['account_username']
+    PASS = Config['account_passwd']
+    UA_IP = Config['uaserver_ip']
+    UA_PORT = int(Config['uaserver_puerto'])
+    RTP_PORT = int(Config['rtpaudio_puerto'])
+    REGPROXY_IP = Config['regproxy_ip']
+    REGPROXY_PORT = int(Config['regproxy_puerto'])
+    LOG = Config['log_path']
+    AUDIO = Config['audio_path']
 
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
     my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    my_socket.connect((proxy_ip, proxy_port))
+    my_socket.connect((REGPROXY_IP, REGPROXY_PORT))
 
-    if METHOD == "REGISTER"
-    if METHOD == "INVITE"
-    if METHOD == "BYE"
+    if METHOD == "REGISTER":
+        Mess = (METHOD + ' sip:' + USER + ':' + str(UA_PORT))
+        Mess += (' SIP/2.0\r\n' + 'Expires: ' + OPTION + '\r\n\r\n')
+        my_socket.send(bytes(Mess, 'utf-8'))
 
-    my_socket.send(bytes(METHOD + Mess, 'utf-8') + b'\r\n')
+    elif METHOD == "INVITE":
+        Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n')
+        SDP = "Content-Type: application/sdp\r\n\r\n"
+        SDP += ('v= 0\r\n' + 'o=' + OPTION + UA_IP+ '\r\n' + 's=')
+        SDP += ('t=0\r\n' + 'm=audio ' + str(RTP_PORT) + ' RTP\r\n\r\n')
+        print(Mess + SDP)
+        my_socket.send(bytes(Mess + SDP, 'utf-8'))
 
+    elif METHOD == "BYE":
+        Mess = (METHOD + ' sip: ' + OPTION + ' SIP/2.0\r\n\r\n')
+        print(Mess)
+        my_socket.send(bytes(Mess, 'utf-8'))
 
-    data = my_socket.recv(1024)
-    Reply = data.decode('utf-8').split()
+    try:
+        data = my_socket.recv(1024)
+        Reply = data.decode('utf-8').split()
+        if Reply[1] == '401':
+            Mess = (' sip:' + USER + ':' + str(UA_PORT))
+            Mess += (' SIP/2.0\r\n' + 'Expires: ' + OPTION + '\r\n')
+            Mess += ("Authorization: Digest response = " + "213421" + '\r\n\r\n')
+            print(Mess)
+            print(Reply)
+        elif Reply[1] == '400':
+            print(Reply)
+        elif Reply[1] == "100" and Reply[4] == "180" and Reply[7] == "200":
+            Mess = ('ACK' + ' sip: ' + OPTION + ' SIP/2.0\r\n\r\n')
+            my_socket.send(bytes(Mess, 'utf-8'))
 
-    if METHOD == "REGISTER"
-    if METHOD == "INVITE"
-    if METHOD == "BYE"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    except ConnectionRefusedError:
+        print('Error: No server listening at '
+                            + REGPROXY_IP + ' port ' + str(REGPROXY_PORT))
 
