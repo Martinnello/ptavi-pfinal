@@ -71,6 +71,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
     if METHOD == "REGISTER":
         Mess = (METHOD + ' sip:' + USER + ':' + str(UA_PORT))
         Mess += (' SIP/2.0\r\n' + 'Expires: ' + OPTION + '\r\n\r\n')
+        print(Mess)
         my_socket.send(bytes(Mess, 'utf-8'))
 
     elif METHOD == "INVITE":
