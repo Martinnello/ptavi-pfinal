@@ -13,7 +13,8 @@ from xml.sax.handler import ContentHandler
 
 
 """Handler para manejar configuración en xml."""
-class XmlHandler(ContentHandler):    
+class XmlHandler(ContentHandler):
+
     def __init__(self):
         self.Atributos = {}
         self.Dicc_Xml = {"server": ['name', 'ip', 'puerto'],
@@ -37,7 +38,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
     Users = {}
 
     """See if database.json exist."""
-    def json2registered(self):
+    def create_database(self):
         try:
             with open(DATABASE, 'r') as jsonfile:
                 self.Users = json.load(jsonfile)
@@ -46,15 +47,29 @@ class EchoHandler(socketserver.DatagramRequestHandler):
 
 
     """Make/Update database.json file."""
-    def register2_json(self):
+    def database_update(self):
         with open(DATABASE, 'w') as jsonfile:
             json.dump(self.Users, jsonfile, indent = 2)
 
 
+    """Add Log Comments"""
+    def log(self, ip, port, message):
+
+    	Time = '%Y%m%d%H%M%S'
+    	Date = str(time.strftime(Time, time.localtime(time.time())))
+
+    	if os.path.exists (LOG):
+    		Log = open(LOG, 'w')
+    	else:
+	    	Log = open(LOG, 'a')
+	    	Log.write(Date + ' Starting...' + '\r\n')
+	    	Log.write(Date + ' Received from ' + ip + ' ' + str(port) + '\r\n')
+	    	Log.write(Date + ' Finishing...' + '\r\n')
+
     """Recieve & Sent SIP Messages."""
     def handle(self):
         
-        self.json2registered()
+        self.create_database()
 
         while 1:
             Lines = self.rfile.read()
@@ -66,14 +81,16 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             METHOD = Info[0]
 
             if METHOD == 'REGISTER':
-            	UA_NAME = Info[1].split(':')[1]
-            	UA_IP = self.client_address[0]
-            	UA_PORT = self.client_address[1]
+            	UA_name = Info[1].split(':')[1]
+            	UA_ip = self.client_address[0]
+            	UA_port = self.client_address[1]
             	Time = time.time()
             	EXPIRES = Info[-1]
-            	self.Users[UA_NAME] = (UA_IP + ' ' + str(UA_PORT) 
+            	self.Users[UA_name] = (UA_ip + ' ' + str(UA_port) 
             						   + ' ' + str(Time) + ' ' + EXPIRES)
-            	self.register2_json()
+
+            	self.log(UA_ip, UA_port, Info)
+            	self.database_update()
 
             	self.wfile.write(b'SIP/2.0 401 Unauthorized\r\n\r\n')
             elif METHOD == 'INVITE':
