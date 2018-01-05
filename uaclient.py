@@ -5,6 +5,7 @@
 
 import sys
 import socket
+from uaserver import XmlHandler
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 
@@ -16,30 +17,6 @@ try:
 
 except IndexError:
     sys.exit("  Usage: python3 uaclient.py config method option ")
-
-
-"""Handler para manejar configuración en xml."""
-class XmlHandler(ContentHandler):    
-
-    def __init__(self):
-        self.Atributos = {}
-        self.Dicc_Xml = {"account": ['username', 'passwd'],
-                         "uaserver": ['ip', 'puerto'],
-                         "rtpaudio": ['puerto'],
-                         "regproxy": ['ip', 'puerto'],
-                         "log": ['path'],
-                         "audio": ['path']}
-
-    """Añade atributos a la lista."""
-    def startElement(self, name, attrs):
-
-        if name in self.Dicc_Xml:
-            for atr in self.Dicc_Xml[name]:
-                self.Atributos[name + "_" + atr] = attrs.get(atr, "")
-
-    """Devuelve la lista de atributos."""
-    def get_tags(self):
-            return (self.Atributos)
 
 
 if __name__ == "__main__":
@@ -76,8 +53,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
 
     elif METHOD == "INVITE":
         Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n')
-        SDP = "Content-Type: application/sdp\r\n\r\n"
-        SDP += ('v= 0\r\n' + 'o=' + OPTION + UA_IP+ '\r\n' + 's=')
+        SDP = ("Content-Type: application/sdp\r\n\r\n" + 'v= 0\r\n')
+        SDP += ('o=' + OPTION + ' ' + UA_IP + '\r\n' + 's=LiveSesion\r\n')
         SDP += ('t=0\r\n' + 'm=audio ' + str(RTP_PORT) + ' RTP\r\n\r\n')
         print(Mess + SDP)
         my_socket.send(bytes(Mess + SDP, 'utf-8'))
@@ -90,17 +67,20 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
     try:
         data = my_socket.recv(1024)
         Reply = data.decode('utf-8').split()
+        print(Reply)
         if Reply[1] == '401':
-            Mess = (' sip:' + USER + ':' + str(UA_PORT))
-            Mess += (' SIP/2.0\r\n' + 'Expires: ' + OPTION + '\r\n')
             Mess += ("Authorization: Digest response = " + "213421" + '\r\n\r\n')
-            print(Mess)
-            print(Reply)
+            my_socket.send(bytes(Mess, 'utf-8'))
+
         elif Reply[1] == '400':
             print(Reply)
+            
         elif Reply[1] == "100" and Reply[4] == "180" and Reply[7] == "200":
             Mess = ('ACK' + ' sip: ' + OPTION + ' SIP/2.0\r\n\r\n')
             my_socket.send(bytes(Mess, 'utf-8'))
+
+    except IndexError:
+        print('Usuario Registrado')
 
     except ConnectionRefusedError:
         print('Error: No server listening at '
