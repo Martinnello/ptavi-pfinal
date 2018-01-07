@@ -6,6 +6,7 @@
 import sys
 import socket
 from uaserver import XmlHandler
+from proxy_registrar import Write_Log
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 
@@ -38,8 +39,11 @@ if __name__ == "__main__":
     RTP_PORT = int(Config['rtpaudio_puerto'])
     REGPROXY_IP = Config['regproxy_ip']
     REGPROXY_PORT = int(Config['regproxy_puerto'])
-    LOG = Config['log_path']
+    LOG_FILE = Config['log_path']
     AUDIO = Config['audio_path']
+    Write_Log(LOG_FILE, '','', ' Starting... ','')
+
+    METHODS = ['REGISTER', 'INVITE', 'BYE']
 
     if METHOD == "REGISTER":
         Mess = (METHOD + ' sip:' + USER + ':' + str(UA_PORT))
@@ -57,32 +61,59 @@ if __name__ == "__main__":
     elif METHOD == "BYE":
         Mess = (METHOD + ' sip: ' + OPTION + ' SIP/2.0\r\n\r\n')
         print(Mess)
+    elif METHOD not in METHODS:
+        print("Method not allowed")
+        sys.exit("Usage: python3 uaclient.py config method option")
         
     try:
-        
+
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
             my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             my_socket.connect((REGPROXY_IP, REGPROXY_PORT))
             my_socket.send(bytes(Mess, 'utf-8'))
-        
+
+            Mess_Type = ' Sent to '
+            Write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
+    
             data = my_socket.recv(1024)
-            Reply = data.decode('utf-8').split()
+            Recv = data.decode('utf-8')
+            Reply = Recv.split()
+
+            Mess_Type = ' Recieved from '
+            Write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Recv)
+
             print(Reply)
             if Reply[1] == '401':
                 Mess += ("Authorization: Digest response = " + "213421" + '\r\n\r\n')
                 my_socket.send(bytes(Mess, 'utf-8'))
+                Mess_Type = ' Sent to '
+                Write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
 
-            elif Reply[1] == '400':
-                print(Reply)
+                data = my_socket.recv(1024).decode('utf-8')
+
+                Mess_Type = ' Recieved from '
+                Write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, data)
 
             elif Reply[1] == "100" and Reply[4] == "180" and Reply[7] == "200":
                 Mess = ('ACK' + ' sip: ' + OPTION + ' SIP/2.0\r\n\r\n')
                 my_socket.send(bytes(Mess, 'utf-8'))
+                Mess_Type = ' Sent to '
+                Write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
+
+        Write_Log(LOG_FILE, '','', ' Finishing.','')
 
     except IndexError:
-        print('No reply')
+        Error =  ('User not conected! ')
+        Mess_Type = ' Error: '
+        Write_Log(LOG_FILE, '', '', Mess_Type, Error)
+        Write_Log(LOG_FILE, '','', ' Finishing.','')
+        sys.exit('Error: ' + Error)
 
     except ConnectionRefusedError:
-        print('Error: No server listening at '
-                            + REGPROXY_IP + ' port ' + str(REGPROXY_PORT))
+        Error =  ('No server listening at '
+                      + REGPROXY_IP + ' port ' + str(REGPROXY_PORT))
+        Mess_Type = ' Error: '
+        Write_Log(LOG_FILE, '', '', Mess_Type, Error)
+        Write_Log(LOG_FILE, '','', ' Finishing.','')
+        sys.exit('Error: ' + Error)
 
