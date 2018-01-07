@@ -7,6 +7,7 @@ import os
 import sys
 import json
 import time
+import socket
 import socketserver
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
@@ -51,6 +52,9 @@ def Write_Log(ip, port, mess_type, message):
                        + ': ' + message + '\r\n')
 
 
+
+
+
 """Client handler requests."""
 class EchoHandler(socketserver.DatagramRequestHandler):
     
@@ -69,6 +73,32 @@ class EchoHandler(socketserver.DatagramRequestHandler):
     def database_update(self):
         with open(DATABASE, 'w') as jsonfile:
             json.dump(self.Users, jsonfile, indent = 2)
+
+
+    def Resent(self, ip, port, message):
+
+        try:
+
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as proxy_socket:
+                proxy_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                proxy_socket.connect((ip, port))
+                proxy_socket.send(bytes(message, 'utf-8'))
+
+                Mess_Type = ' Sent to '
+                Write_Log(ip, port, Mess_Type, message)
+
+                data = proxy_socket.recv(1024)
+                Recv = data.decode('utf-8')
+                #Reply = Recv.split()
+                self.wfile.write(bytes(Recv, 'utf-8'))
+
+                Mess_Type = ' Received from '
+                Write_Log(ip, port, Mess_Type, Recv)
+
+
+        except ConnectionRefusedError:
+            print('Error: No server listening at '
+                      + ip + ' port ' + str(port))
             
 
     """Recieve & Sent SIP Messages."""
@@ -82,20 +112,24 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 break
 
             Message = Lines.decode('utf-8')
-            Info = Message.split()
-            UA_ip = self.client_address[0]
-            UA_port = self.client_address[1]
-            print(Info)
+            Source_Info = Message.split()
+            UA_name = Source_Info[1].split(':')[1]
+            print(Source_Info)
+            Source_ip = self.client_address[0]
+            Source_port = self.client_address[1]
+            
             Mess_Type = ' Received from '
-            Write_Log(UA_ip, UA_port, Mess_Type, Message)
+            Write_Log(Source_ip, Source_port, Mess_Type, Message)
 
             METHODS = ['REGISTER', 'INVITE', 'ACK', 'BYE']
-            METHOD = Info[0]
+            METHOD = Source_Info[0]
+
 
             if METHOD == 'REGISTER':
-                UA_name = Info[1].split(':')[1]
+                
                 Time = time.time()
-                EXPIRES = Info[4]
+                EXPIRES = Source_Info[4]
+                UAserver_PORT = Source_Info[1].split(':')[2]
 
                 try:
                     if int(EXPIRES) == 0:
@@ -104,38 +138,68 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                         self.wfile.write(bytes(Reply, 'utf-8'))
                         
                     else:
-                        if len(Info) == 5:
+                        if len(Source_Info) == 5:
                             Reply = 'SIP/2.0 401 Unauthorized\r\n\r\n'
                             self.wfile.write(bytes(Reply, 'utf-8'))
 
-                        if len(Info) == 10:
-                            self.Users[UA_name] = (UA_ip + ' ' + str(UA_port) 
-                                            + ' ' + str(Time) + ' ' + EXPIRES)
+                        if len(Source_Info) == 10:
+                            self.Users[UA_name] = (Source_ip + ' ' 
+                                                + str(UAserver_PORT) + ' ' 
+                                                + str(Time) + ' ' + EXPIRES)
 
                             Reply = 'SIP/2.0 200 OK\r\n\r\n'
                             self.wfile.write(bytes(Reply, 'utf-8'))
 
                     self.database_update()
                     Mess_Type = ' Sent to '
-                    Write_Log(UA_ip, UA_port, Mess_Type, Reply)
+                    Write_Log(Source_ip, Source_port, Mess_Type, Reply)
 
                 except KeyError:
                     self.wfile.write(b'SIP/2.0 404 User Not Found\r\n\r\n')
 
 
             elif METHOD == 'INVITE':
-                self.wfile.write(b'SIP/2.0 100 Trying\r\n\r\n')
-                self.wfile.write(b'SIP/2.0 180 Ringing\r\n\r\n')
-                self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
-                Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n' + 'o=')
-                SDP = ("Content-Type: application/sdp\r\n\r\n" + 'v= 0\r\n')
-                SDP += (OPTION + ' ' + UA_IP + '\r\n' + 's=LiveSesion\r\n')
-                SDP += ('t=0\r\n' + 'm=audio ' + str(RTP_PORT) + ' RTP\r\n\r\n')
-                print(Mess + SDP)
-                my_socket.send(bytes(Mess + SDP, 'utf-8'))
+                
+                if UA_name in self.Users:
+                    Destiny_Info = self.Users[UA_name].split()
+                    Destiny_ip = Destiny_Info[0]
+                    Destiny_port = int(Destiny_Info[1])
+                    print(Destiny_Info)
+                    print(Destiny_ip)
+                    print(Destiny_port)
+
+                    self.Resent(Destiny_ip, Destiny_port, Message)
+
+                    #try:
+
+                        
+                     #   print(Reply)
+
+                      #  if Reply[1] == "100" and Reply[4] == "180" and Reply[7] == "200":
+
+                      #      self.wfile.write(b'SIP/2.0 100 Trying\r\n\r\n')
+                       #     self.wfile.write(b'SIP/2.0 180 Ringing\r\n\r\n')
+                        #    self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
+                            
+
+                    #except IndexError:
+                     #   print('No reply')
+
+                    
+
 
             elif METHOD == 'ACK':
-                my_socket.send(bytes(Message, 'utf-8'))
+                UA_name = Source_Info[2]
+                if UA_name in self.Users:
+                    Destiny_Info = self.Users[UA_name].split()
+                    Destiny_ip = Destiny_Info[0]
+                    Destiny_port = int(Destiny_Info[1])
+                    print(Destiny_Info)
+                    print(Destiny_ip)
+                    print(Destiny_port)
+
+                    self.Resent(Destiny_ip, Destiny_port, Message)
+            
             elif METHOD == 'BYE':
                 self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
             elif METHOD not in METHODS:

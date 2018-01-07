@@ -41,46 +41,46 @@ if __name__ == "__main__":
     LOG = Config['log_path']
     AUDIO = Config['audio_path']
 
-with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
-    my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    my_socket.connect((REGPROXY_IP, REGPROXY_PORT))
-
     if METHOD == "REGISTER":
         Mess = (METHOD + ' sip:' + USER + ':' + str(UA_PORT))
         Mess += (' SIP/2.0\r\n' + 'Expires: ' + OPTION + '\r\n\r\n')
         print(Mess)
-        my_socket.send(bytes(Mess, 'utf-8'))
 
     elif METHOD == "INVITE":
         Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n')
-        SDP = ("Content-Type: application/sdp\r\n\r\n" + 'v= 0\r\n')
+        SDP = ("Content-Type: application/sdp\r\n\r\n" + 'v=0\r\n')
         SDP += ('o=' + OPTION + ' ' + UA_IP + '\r\n' + 's=LiveSesion\r\n')
         SDP += ('t=0\r\n' + 'm=audio ' + str(RTP_PORT) + ' RTP\r\n\r\n')
-        print(Mess + SDP)
-        my_socket.send(bytes(Mess + SDP, 'utf-8'))
+        Mess += SDP
+        print(Mess)
 
     elif METHOD == "BYE":
         Mess = (METHOD + ' sip: ' + OPTION + ' SIP/2.0\r\n\r\n')
         print(Mess)
-        my_socket.send(bytes(Mess, 'utf-8'))
-
+        
     try:
-        data = my_socket.recv(1024)
-        Reply = data.decode('utf-8').split()
-        print(Reply)
-        if Reply[1] == '401':
-            Mess += ("Authorization: Digest response = " + "213421" + '\r\n\r\n')
+        
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
+            my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            my_socket.connect((REGPROXY_IP, REGPROXY_PORT))
             my_socket.send(bytes(Mess, 'utf-8'))
-
-        elif Reply[1] == '400':
+        
+            data = my_socket.recv(1024)
+            Reply = data.decode('utf-8').split()
             print(Reply)
-            
-        elif Reply[1] == "100" and Reply[4] == "180" and Reply[7] == "200":
-            Mess = ('ACK' + ' sip: ' + OPTION + ' SIP/2.0\r\n\r\n')
-            my_socket.send(bytes(Mess, 'utf-8'))
+            if Reply[1] == '401':
+                Mess += ("Authorization: Digest response = " + "213421" + '\r\n\r\n')
+                my_socket.send(bytes(Mess, 'utf-8'))
+
+            elif Reply[1] == '400':
+                print(Reply)
+
+            elif Reply[1] == "100" and Reply[4] == "180" and Reply[7] == "200":
+                Mess = ('ACK' + ' sip: ' + OPTION + ' SIP/2.0\r\n\r\n')
+                my_socket.send(bytes(Mess, 'utf-8'))
 
     except IndexError:
-        print('Usuario Registrado')
+        print('No reply')
 
     except ConnectionRefusedError:
         print('Error: No server listening at '

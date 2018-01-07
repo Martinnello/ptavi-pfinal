@@ -52,9 +52,18 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             if METHOD == 'REGISTER':
                 self.wfile.write(b'SIP/2.0 401 Unauthorized\r\n\r\n')
             elif METHOD == 'INVITE':
+
                 self.wfile.write(b'SIP/2.0 100 Trying\r\n\r\n')
                 self.wfile.write(b'SIP/2.0 180 Ringing\r\n\r\n')
                 self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
+                UA_name = Info[1].split(':')[1]
+               
+                SDP = ("Content-Type: application/sdp\r\n\r\n")
+                SDP += ('v=0\r\n' + "o=" + UA_name + ' ' + UA_IP + '\r\n')
+                SDP += ('s=LiveSesion\r\n' + 't=0\r\n' + 'm=audio ')
+                SDP += (str(RTP_PORT) + ' RTP\r\n\r\n')
+                self.wfile.write(bytes(SDP, 'utf-8'))
+
             elif METHOD == 'ACK':
                 Exe = './mp32rtp -i 127.0.0.1 -p 23032 < ' + AUDIO_FILE
                 print("Ejecutando...   ", Exe)
