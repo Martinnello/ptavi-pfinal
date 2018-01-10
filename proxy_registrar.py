@@ -34,7 +34,7 @@ class XmlHandler(ContentHandler):
 
 
 """Add Log Comments"""
-def Write_Log(file, ip, port, mess_type, message):
+def write_Log(file, ip, port, mess_type, message):
 
     Time = '%Y%m%d%H%M%S'
     Date = str(time.strftime(Time, time.localtime(time.time())))
@@ -75,8 +75,8 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             json.dump(self.Users, jsonfile, indent = 2)
 
 
-    """Resent the message from proxy to destiny"""
-    def Resent(self, ip, port, message):
+    """Resent the message from proxy to destiny waiting response"""
+    def resent(self, ip, port, message, src_port, dst_port):
 
         try:
 
@@ -85,19 +85,23 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 proxy_socket.connect((ip, port))
                 proxy_socket.send(bytes(message, 'utf-8'))
                 Mess_Type = ' Sent to '
-                Write_Log(LOG_FILE, ip, port, Mess_Type, message)
+                write_Log(LOG_FILE, ip, port, Mess_Type, message)
 
                 data = proxy_socket.recv(1024)
                 Recv = data.decode('utf-8')
+
                 Mess_Type = ' Received from '
-                Write_Log(LOG_FILE, ip, port, Mess_Type, Recv)
+                write_Log(LOG_FILE, ip, port, Mess_Type, Recv)
                 self.wfile.write(bytes(Recv, 'utf-8'))
+                Mess_Type = ' Sent to '
+                write_Log(LOG_FILE, src_port, dst_port, Mess_Type, Recv)
+
 
         except ConnectionRefusedError:
             Error =  ('No server listening at '
                       + ip + ' port ' + str(port))
             Mess_Type = ' Error: '
-            Write_Log(LOG_FILE, ip, port, Mess_Type, Error)
+            write_Log(LOG_FILE, ip, port, Mess_Type, Error)
             sys.exit('Error: ' + Error)
             
 
@@ -118,10 +122,11 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             UA_name = Source_Info[1].split(':')[1]
             
             Mess_Type = ' Received from '
-            Write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Message)
+            write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Message)
 
             METHODS = ['REGISTER', 'INVITE', 'ACK', 'BYE']
             METHOD = Source_Info[0]
+
 
             try:
 
@@ -152,13 +157,13 @@ class EchoHandler(socketserver.DatagramRequestHandler):
 
                         self.database_update()
                         Mess_Type = ' Sent to '
-                        Write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
+                        write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
 
                     except KeyError:
                         Reply = 'SIP/2.0 404 User Not Found\r\n\r\n'
                         self.wfile.write(bytes(Reply, 'utf-8'))
                         Mess_Type = ' Sent to '
-                        Write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
+                        write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
 
 
                 elif METHOD == 'INVITE':
@@ -168,60 +173,71 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                         Destiny_ip = Destiny_Info[0]
                         Destiny_port = int(Destiny_Info[1])
 
-                        self.Resent(Destiny_ip, Destiny_port, Message)
+                        self.resent(Destiny_ip, Destiny_port, Message, Source_ip, Source_port)
                     
                     else:
 
                         Reply = 'SIP/2.0 404 User Not Found\r\n\r\n'
                         self.wfile.write(bytes(Reply, 'utf-8'))
                         Mess_Type = ' Sent to '
-                        Write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
+                        write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
 
                 elif METHOD == 'ACK':
-                    UA_name = Source_Info[2]
 
                     if UA_name in self.Users:
                         Destiny_Info = self.Users[UA_name].split()
                         Destiny_ip = Destiny_Info[0]
                         Destiny_port = int(Destiny_Info[1])
 
-                        self.Resent(Destiny_ip, Destiny_port, Message)
+                        try:
+                            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as proxy_socket:
+                                proxy_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                                proxy_socket.connect((Destiny_ip, Destiny_port))
+                                proxy_socket.send(bytes(Message, 'utf-8'))
+                                Mess_Type = ' Sent to '
+                                write_Log(LOG_FILE, Destiny_ip, Destiny_port, Mess_Type, Message)
+
+                        except ConnectionRefusedError:
+                            Error =  ('No server listening at '
+                                      + ip + ' port ' + str(port))
+                            Mess_Type = ' Error: '
+                            write_Log(LOG_FILE, ip, port, Mess_Type, Error)
+                            sys.exit('Error: ' + Error)
 
                     else:
 
                         Reply = 'SIP/2.0 404 User Not Found\r\n\r\n'
                         self.wfile.write(bytes(Reply, 'utf-8'))
                         Mess_Type = ' Sent to '
-                        Write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
+                        write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
                 
                 elif METHOD == 'BYE':
-                    UA_name = Source_Info[2]
 
                     if UA_name in self.Users:
                         Destiny_Info = self.Users[UA_name].split()
                         Destiny_ip = Destiny_Info[0]
                         Destiny_port = int(Destiny_Info[1])
 
-                        self.Resent(Destiny_ip, Destiny_port, Message)
+                        self.resent(Destiny_ip, Destiny_port, Message, Source_ip, Source_port)
 
                     else:
 
                         Reply = 'SIP/2.0 404 User Not Found\r\n\r\n'
                         self.wfile.write(bytes(Reply, 'utf-8'))
                         Mess_Type = ' Sent to '
-                        Write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
+                        write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
 
                 elif METHOD not in METHODS:
                     Reply = 'SIP/2.0 405 Method Not Allowed\r\n\r\n'
                     self.wfile.write(bytes(Reply, 'utf-8'))
                     Mess_Type = ' Sent to '
-                    Write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
+                    write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
 
             except ValueError:
                 Reply = 'SIP/2.0 400 Bad Request\r\n\r\n'
                 self.wfile.write(bytes(Reply, 'utf-8'))
                 Mess_Type = ' Sent to '
-                Write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
+                write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Reply)
 
 if __name__ == "__main__":
 
@@ -249,10 +265,10 @@ if __name__ == "__main__":
 
         serv = socketserver.UDPServer((REGPROXY_IP, REGPROXY_PORT), EchoHandler)
         print("Server listening at port " + str(REGPROXY_PORT) + '...')
-        Write_Log(LOG_FILE, '','', ' Starting... ','')
+        write_Log(LOG_FILE, '','', ' Starting... ','')
         serv.serve_forever()
 
     except KeyboardInterrupt:
-        Write_Log(LOG_FILE, '','', ' Finishing.','')
+        write_Log(LOG_FILE, '','', ' Finishing.','')
         print("\n" + "Servidor finalizado")
 

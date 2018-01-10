@@ -56,7 +56,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 self.wfile.write(b'SIP/2.0 100 Trying\r\n\r\n')
                 self.wfile.write(b'SIP/2.0 180 Ringing\r\n\r\n')
                 self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
-                UA_name = Info[1].split(':')[1]
+                
                
                 SDP = ("Content-Type: application/sdp\r\n\r\n")
                 SDP += ('v=0\r\n' + "o=" + USER + ' ' + UA_IP + '\r\n')
@@ -68,6 +68,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO_FILE
                 print("Ejecutando...   ", Exe)
                 os.system(Exe)
+
             elif METHOD == 'BYE':
                 self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
             elif METHOD not in METHODS:
