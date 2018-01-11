@@ -45,59 +45,61 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             if len(Lines) == 0:
                 break
 
-            Info = Lines.decode('utf-8').split()
+            Message = Lines.decode('utf-8')
+            Info = Message.split()
             METHODS = ['INVITE', 'ACK', 'BYE']
             METHOD = Info[0]
             Source_ip = self.client_address[0]
             Source_port = self.client_address[1]
-            print(Info)
+            print('Received:\r\n' + Message)
             Mess_Type = ' Received from '
-            write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Message)
+            write_Log(LOG, Source_ip, Source_port, Mess_Type, Message)
 
             if METHOD == 'INVITE':
                 
                 Trying = 'SIP/2.0 100 Trying\r\n'
                 self.wfile.write(bytes(Trying, 'utf-8'))
                 Mess_Type = ' Sent to '
-                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Trying)
+                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Trying)
                 
                 Ringing = 'SIP/2.0 180 Ringing\r\n'
                 self.wfile.write(bytes(Ringing, 'utf-8'))
                 Mess_Type = ' Sent to '
-                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Riging)
+                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Ringing)
                 
                 OK = 'SIP/2.0 200 OK\r\n\r\n'
                 SDP = ("Content-Type: application/sdp\r\n\r\n")
                 SDP += ('v=0\r\n' + "o=" + USER + ' ' + UA_IP + '\r\n')
                 SDP += ('s=LiveSesion\r\n' + 't=0\r\n' + 'm=audio ')
                 SDP += RTP_PORT + ' RTP\r\n\r\n'
+                
                 self.wfile.write(bytes(OK + SDP, 'utf-8'))
                 Mess_Type = ' Sent to '
-                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, OK + SDP)
+                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, OK + SDP)
 
             elif METHOD == 'ACK':
                 Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO_FILE
                 print("Ejecutando...   ", Exe)
                 os.system(Exe)
-                Mess_Type = ' Envio RTP... '
-                write_Log(LOG_FILE, '', '', Mess_Type, '')
+                Mess_Type = ' Envio RTP...'
+                write_Log(LOG, '', '', Mess_Type, '')
 
             elif METHOD == 'BYE':
                 Reply = 'SIP/2.0 200 OK\r\n\r\n'
                 self.wfile.write(bytes(Reply, 'utf-8'))
                 Mess_Type = ' Sent to '
-                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Reply)
+                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Reply)
                 
             elif METHOD not in METHODS:
                 Reply = 'SIP/2.0 405 Method Not Allowed\r\n\r\n'
                 self.wfile.write(bytes(Reply, 'utf-8'))
                 Mess_Type = ' Sent to '
-                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Reply)
+                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Reply)
             else:
                 Reply = 'SIP/2.0 400 Bad Request\r\n\r\n'
                 self.wfile.write(bytes(Reply, 'utf-8'))
                 Mess_Type = ' Sent to '
-                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Reply)
+                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Reply)
 
 
 if __name__ == "__main__":
@@ -129,8 +131,9 @@ if __name__ == "__main__":
 
         serv = socketserver.UDPServer((UA_IP, UA_PORT), EchoHandler)
         print("Listening...")
-        write_Log(LOG_FILE, '','', ' Starting... ','')
+        write_Log(LOG, '','', ' Starting... ','UA_Server')
         serv.serve_forever()
 
     except KeyboardInterrupt:
         print("\n" + "Servidor finalizado")
+        write_Log(LOG, '','', ' Finishing ','UA_Server')

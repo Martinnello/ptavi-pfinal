@@ -42,14 +42,14 @@ if __name__ == "__main__":
     REGPROXY_PORT = int(Config['regproxy_puerto'])
     LOG_FILE = Config['log_path']
     AUDIO_FILE = Config['audio_path']
-    write_Log(LOG_FILE, '','', ' Starting... ','')
+    write_Log(LOG_FILE, '','', ' Starting... ','Client')
 
     METHODS = ['REGISTER', 'INVITE', 'BYE']
 
     if METHOD == "REGISTER":
         Mess = (METHOD + ' sip:' + USER + ':' + str(UA_PORT))
         Mess += (' SIP/2.0\r\n' + 'Expires: ' + OPTION + '\r\n\r\n')
-        print(Mess)
+        print('Sent: \r\n' + Mess)
 
     elif METHOD == "INVITE":
         Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n')
@@ -57,11 +57,11 @@ if __name__ == "__main__":
         SDP += ('o=' + USER + ' ' + UA_IP + '\r\n' + 's=LiveSesion\r\n')
         SDP += ('t=0\r\n' + 'm=audio ' + RTP_PORT + ' RTP\r\n\r\n')
         Mess += SDP
-        print(Mess)
+        print('Sent: \r\n' + Mess)
 
     elif METHOD == "BYE":
         Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n\r\n')
-        print(Mess)
+        print('Sent: \r\n' + Mess)
     elif METHOD not in METHODS:
         print("Method not allowed")
         sys.exit("Usage: python3 uaclient.py config method option")
@@ -84,7 +84,7 @@ if __name__ == "__main__":
             Mess_Type = ' Recieved from '
             write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Recv)
 
-            print(Reply)
+            print('Received:\r\n' + Recv)
             if Reply[1] == '401':
                 Mess += ("Authorization: Digest response = " + "213421" + '\r\n\r\n')
                 my_socket.send(bytes(Mess, 'utf-8'))
@@ -102,20 +102,19 @@ if __name__ == "__main__":
                 Mess_Type = ' Sent to '
                 write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
                 
-                print('\r\n\r\n')
                 Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO_FILE
                 print("Ejecutando...   ", Exe)
                 os.system(Exe)
-                Mess_Type = ' Envio RTP... '
+                Mess_Type = ' Envio RTP...'
                 write_Log(LOG_FILE, '', '', Mess_Type, '')
 
-        write_Log(LOG_FILE, '','', ' Finishing.','')
+        write_Log(LOG_FILE, '','', ' Finishing ','Client')
 
     except IndexError:
         Error =  ('User not conected! ')
         Mess_Type = ' Error: '
         write_Log(LOG_FILE, '', '', Mess_Type, Error)
-        write_Log(LOG_FILE, '','', ' Finishing.','')
+        write_Log(LOG_FILE, '','', ' Finishing ','Client')
         sys.exit('Error: ' + Error)
 
     except ConnectionRefusedError:
@@ -123,6 +122,6 @@ if __name__ == "__main__":
                       + REGPROXY_IP + ' port ' + str(REGPROXY_PORT))
         Mess_Type = ' Error: '
         write_Log(LOG_FILE, '', '', Mess_Type, Error)
-        write_Log(LOG_FILE, '','', ' Finishing.','')
+        write_Log(LOG_FILE, '','', ' Finishing ','Client')
         sys.exit('Error: ' + Error)
 

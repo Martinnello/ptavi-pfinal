@@ -42,13 +42,16 @@ def write_Log(file, ip, port, mess_type, message):
 
     if not os.path.exists (file):
         Log = open(file, 'w')
-        Log.write(Date + mess_type + '\r\n')
-    elif  mess_type == ' Starting... ' or mess_type == ' Finishing.':
+        Log.write(Date + mess_type + message + '\r\n')
+    elif  mess_type == ' Starting... ' or mess_type == ' Finishing ':
         Log = open(file, 'a')
-        Log.write(Date + mess_type + '\r\n')
+        Log.write(Date + mess_type + message + '\r\n')
     elif mess_type == ' Error: ':
         Log = open(file, 'a')
         Log.write(Date + mess_type + message + '\r\n')
+    elif mess_type == ' Envio RTP...':
+        Log = open(file, 'a')
+        Log.write(Date + mess_type + '\r\n')
     else:
         Log = open(file, 'a')
         Log.write(Date + mess_type + ip + ':' + str(port) 
@@ -123,6 +126,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             
             Mess_Type = ' Received from '
             write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Message)
+            print('Received:\r\n' + Message)
 
             METHODS = ['REGISTER', 'INVITE', 'ACK', 'BYE']
             METHOD = Source_Info[0]
@@ -174,6 +178,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                         Destiny_port = int(Destiny_Info[1])
 
                         self.resent(Destiny_ip, Destiny_port, Message, Source_ip, Source_port)
+                        print('Message resent\r\n')
                     
                     else:
 
@@ -189,13 +194,13 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                         Destiny_ip = Destiny_Info[0]
                         Destiny_port = int(Destiny_Info[1])
 
-                    try:
                         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as proxy_socket:
                             proxy_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                             proxy_socket.connect((Destiny_ip, Destiny_port))
                             proxy_socket.send(bytes(Message, 'utf-8'))
                             Mess_Type = ' Sent to '
                             write_Log(LOG_FILE, Destiny_ip, Destiny_port, Mess_Type, Message)
+                            print('Message resent\r\n')
 
                     else:
 
@@ -212,6 +217,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                         Destiny_port = int(Destiny_Info[1])
 
                         self.resent(Destiny_ip, Destiny_port, Message, Source_ip, Source_port)
+                        print('Message resent\r\n')
 
                     else:
 
@@ -258,10 +264,10 @@ if __name__ == "__main__":
 
         serv = socketserver.UDPServer((REGPROXY_IP, REGPROXY_PORT), EchoHandler)
         print("Server listening at port " + str(REGPROXY_PORT) + '...')
-        write_Log(LOG_FILE, '','', ' Starting... ','')
+        write_Log(LOG_FILE, '','', ' Starting... ','Proxy')
         serv.serve_forever()
 
     except KeyboardInterrupt:
-        write_Log(LOG_FILE, '','', ' Finishing.','')
+        write_Log(LOG_FILE, '','', ' Finishing ','Proxy')
         print("\n" + "Servidor finalizado")
 
