@@ -39,8 +39,8 @@ if __name__ == "__main__":
     UA_IP = Config['uaserver_ip']
     UA_PORT = int(Config['uaserver_puerto'])
     RTP = Config['rtpaudio_puerto']
-    PROXY_IP = Config['PROXY_IP']
-    PROXY_PORT = int(Config['PROXY_puerto'])
+    PROXY_IP = Config['regproxy_ip']
+    PROXY_PORT = int(Config['regproxy_puerto'])
     LOG = Config['log_path']
     AUDIO = Config['audio_path']
 
