@@ -49,7 +49,7 @@ if __name__ == "__main__":
         my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         my_socket.connect((PROXY_IP, PROXY_PORT))
-        write_Log(LOG, '','', ' Starting... ','Client')
+        write_Log(LOG, '', '', ' Starting... ', 'Client')
 
         METHODS = ['REGISTER', 'INVITE', 'BYE']
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
                     Decryp.update(bytes(Nonce, 'utf-8'))
                     Decryp.update(bytes(PASS, 'utf-8'))
                     Decryp = Decryp.hexdigest()
-                    
+
                     Mess += 'Authorization: Digest responce=' + Decryp
                     my_socket.send(bytes(Mess, 'utf-8'))
                     Mess_Type = ' Sent to '
@@ -90,16 +90,15 @@ if __name__ == "__main__":
                 Error = ('No server listening at ' + PROXY_IP)
                 Error += (' port ' + str(PROXY_PORT))
                 write_Log(LOG, '', '', ' Error: ', Error)
-                write_Log(LOG, '','', ' Finishing ','Client')
+                write_Log(LOG, '', '', ' Finishing ', 'Client')
                 sys.exit('Error: ' + Error)
 
             except IndexError:
-                Error =  ('User server is not connected! ')
+                Error = ('User server is not connected! ')
                 Mess_Type = ' Error: '
                 write_Log(LOG, '', '', Mess_Type, Error)
-                write_Log(LOG, '','', ' Finishing ','Client')
+                write_Log(LOG, '', '', ' Finishing ', 'Client')
                 sys.exit('Error: ' + Error)
-
 
         elif METHOD == "INVITE":
             Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n')
@@ -124,7 +123,7 @@ if __name__ == "__main__":
                     my_socket.send(bytes(Mess, 'utf-8'))
                     Mess_Type = ' Sent to '
                     write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Mess)
-                    
+
                     Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP + ' < ' + AUDIO
                     print("Ejecutando...   ", Exe)
                     os.system(Exe)
@@ -133,26 +132,24 @@ if __name__ == "__main__":
 
                 elif Reply[1] == '404':
                     write_Log(LOG, '', '', ' Error: ', Recv)
-                    write_Log(LOG, '','', ' Finishing ','Client')
+                    write_Log(LOG, '', '', ' Finishing ', 'Client')
                     sys.exit('Error: User Not Found')
 
             except ConnectionRefusedError:
                 Error = ('No server listening at ' + PROXY_IP)
                 Error += (' port ' + str(PROXY_PORT))
                 write_Log(LOG, '', '', ' Error: ', Error)
-                write_Log(LOG, '','', ' Finishing ','Client')
+                write_Log(LOG, '', '', ' Finishing ', 'Client')
                 sys.exit('Error: ' + Error)
 
             except IndexError:
-                Error =  ('User server is not connected! ')
+                Error = ('User server is not connected! ')
                 Mess_Type = ' Error: '
                 write_Log(LOG, '', '', Mess_Type, Error)
-                write_Log(LOG, '','', ' Finishing ','Client')
+                write_Log(LOG, '', '', ' Finishing ', 'Client')
                 sys.exit('Error: ' + Error)
 
-            
             write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Recv)
-
 
         elif METHOD == "BYE":
             Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n\r\n')
@@ -173,18 +170,17 @@ if __name__ == "__main__":
                 Error = ('No server listening at ' + PROXY_IP)
                 Error += (' port ' + str(PROXY_PORT))
                 write_Log(LOG, '', '', ' Error: ', Error)
-                write_Log(LOG, '','', ' Finishing ','Client')
+                write_Log(LOG, '', '', ' Finishing ', 'Client')
                 sys.exit('Error: ' + Error)
 
         elif METHOD not in METHODS:
             print("Method not allowed")
             sys.exit("Usage: python3 uaclient.py config method option")
 
-
-        write_Log(LOG, '','', ' Finishing ','Client')
+        write_Log(LOG, '', '', ' Finishing ', 'Client')
 
     except ConnectionRefusedError:
-        Error =  ('No server listening at ' + ip + ' port ' + str(port))
+        Error = ('No server listening at ' + ip + ' port ' + str(port))
         Mess_Type = ' Error: '
         write_Log(LOG, ip, port, Mess_Type, Error)
         sys.exit('Error: ' + Error)
