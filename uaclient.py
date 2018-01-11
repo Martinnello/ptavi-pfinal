@@ -104,7 +104,7 @@ if __name__ == "__main__":
             Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n')
             SDP = ("Content-Type: application/sdp\r\n\r\n" + 'v=0\r\n')
             SDP += ('o=' + USER + ' ' + UA_IP + '\r\n' + 's=LiveSesion\r\n')
-            SDP += ('t=0\r\n' + 'm=audio ' + RTP_PORT + ' RTP\r\n\r\n')
+            SDP += ('t=0\r\n' + 'm=audio ' + RTP + ' RTP\r\n\r\n')
             Mess += SDP
             my_socket.send(bytes(Mess, 'utf-8'))
             Mess_Type = ' Sent to '
