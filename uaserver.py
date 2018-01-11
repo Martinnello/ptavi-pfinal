@@ -11,10 +11,11 @@ from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 
 
-"""Handler para manejar configuración en xml."""
-class XmlHandler(ContentHandler):    
+class XmlHandler(ContentHandler):
+    """Handler para manejar configuración en xml."""
 
     def __init__(self):
+        """Inicia el manejador."""
         self.Atributos = {}
         self.Dicc_Xml = {"account": ['username', 'passwd'],
                          "uaserver": ['ip', 'puerto'],
@@ -23,16 +24,15 @@ class XmlHandler(ContentHandler):
                          "log": ['path'],
                          "audio": ['path']}
 
-    """Añade atributos a la lista."""
     def startElement(self, name, attrs):
-
+        """Añade atributos a la lista."""
         if name in self.Dicc_Xml:
             for atr in self.Dicc_Xml[name]:
                 self.Atributos[name + "_" + atr] = attrs.get(atr, "")
 
-    """Devuelve la lista de atributos."""
     def get_tags(self):
-            return (self.Atributos)
+        """Devuelve la lista de atributos."""
+        return (self.Atributos)
 
 
 class EchoHandler(socketserver.DatagramRequestHandler):
@@ -56,23 +56,23 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             write_Log(LOG, Source_ip, Source_port, Mess_Type, Message)
 
             if METHOD == 'INVITE':
-                
+
                 Trying = 'SIP/2.0 100 Trying\r\n'
                 self.wfile.write(bytes(Trying, 'utf-8'))
                 Mess_Type = ' Sent to '
                 write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Trying)
-                
+
                 Ringing = 'SIP/2.0 180 Ringing\r\n'
                 self.wfile.write(bytes(Ringing, 'utf-8'))
                 Mess_Type = ' Sent to '
                 write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Ringing)
-                
+
                 OK = 'SIP/2.0 200 OK\r\n\r\n'
                 SDP = ("Content-Type: application/sdp\r\n\r\n")
                 SDP += ('v=0\r\n' + "o=" + USER + ' ' + UA_IP + '\r\n')
                 SDP += ('s=LiveSesion\r\n' + 't=0\r\n' + 'm=audio ')
                 SDP += RTP_PORT + ' RTP\r\n\r\n'
-                
+
                 self.wfile.write(bytes(OK + SDP, 'utf-8'))
                 Mess_Type = ' Sent to '
                 write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, OK + SDP)
@@ -89,7 +89,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 self.wfile.write(bytes(Reply, 'utf-8'))
                 Mess_Type = ' Sent to '
                 write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Reply)
-                
+
             elif METHOD not in METHODS:
                 Reply = 'SIP/2.0 405 Method Not Allowed\r\n\r\n'
                 self.wfile.write(bytes(Reply, 'utf-8'))
@@ -125,15 +125,15 @@ if __name__ == "__main__":
     REGPROXY_IP = Config['regproxy_ip']
     REGPROXY_PORT = int(Config['regproxy_puerto'])
     LOG = Config['log_path']
-    AUDIO = Config['audio_path'] 
+    AUDIO = Config['audio_path']
 
     try:
 
         serv = socketserver.UDPServer((UA_IP, UA_PORT), EchoHandler)
         print("Listening...")
-        write_Log(LOG, '','', ' Starting... ','UA_Server')
+        write_Log(LOG, '', '', ' Starting... ', 'UA_Server')
         serv.serve_forever()
 
     except KeyboardInterrupt:
         print("\n" + "Servidor finalizado")
-        write_Log(LOG, '','', ' Finishing ','UA_Server')
+        write_Log(LOG, '', '', ' Finishing ', 'UA_Server')
