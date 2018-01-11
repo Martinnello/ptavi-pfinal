@@ -6,6 +6,7 @@
 import os
 import sys
 import socketserver
+from proxy_registrar import write_Log
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 
@@ -45,36 +46,58 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 break
 
             Info = Lines.decode('utf-8').split()
-            METHODS = ['REGISTER', 'INVITE', 'ACK', 'BYE']
+            METHODS = ['INVITE', 'ACK', 'BYE']
             METHOD = Info[0]
+            Source_ip = self.client_address[0]
+            Source_port = self.client_address[1]
             print(Info)
+            Mess_Type = ' Received from '
+            write_Log(LOG_FILE, Source_ip, Source_port, Mess_Type, Message)
 
-            if METHOD == 'REGISTER':
-                self.wfile.write(b'SIP/2.0 401 Unauthorized\r\n\r\n')
-            elif METHOD == 'INVITE':
-
-                self.wfile.write(b'SIP/2.0 100 Trying\r\n\r\n')
-                self.wfile.write(b'SIP/2.0 180 Ringing\r\n\r\n')
-                self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
+            if METHOD == 'INVITE':
                 
-               
+                Trying = 'SIP/2.0 100 Trying\r\n'
+                self.wfile.write(bytes(Trying, 'utf-8'))
+                Mess_Type = ' Sent to '
+                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Trying)
+                
+                Ringing = 'SIP/2.0 180 Ringing\r\n'
+                self.wfile.write(bytes(Ringing, 'utf-8'))
+                Mess_Type = ' Sent to '
+                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Riging)
+                
+                OK = 'SIP/2.0 200 OK\r\n\r\n'
                 SDP = ("Content-Type: application/sdp\r\n\r\n")
                 SDP += ('v=0\r\n' + "o=" + USER + ' ' + UA_IP + '\r\n')
                 SDP += ('s=LiveSesion\r\n' + 't=0\r\n' + 'm=audio ')
                 SDP += RTP_PORT + ' RTP\r\n\r\n'
-                self.wfile.write(bytes(SDP, 'utf-8'))
+                self.wfile.write(bytes(OK + SDP, 'utf-8'))
+                Mess_Type = ' Sent to '
+                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, OK + SDP)
 
             elif METHOD == 'ACK':
                 Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO_FILE
                 print("Ejecutando...   ", Exe)
                 os.system(Exe)
+                Mess_Type = ' Envio RTP... '
+                write_Log(LOG_FILE, '', '', Mess_Type, '')
 
             elif METHOD == 'BYE':
-                self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
+                Reply = 'SIP/2.0 200 OK\r\n\r\n'
+                self.wfile.write(bytes(Reply, 'utf-8'))
+                Mess_Type = ' Sent to '
+                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Reply)
+                
             elif METHOD not in METHODS:
-                self.wfile.write(b'SIP/2.0 405 Method Not Allowed\r\n\r\n')
+                Reply = 'SIP/2.0 405 Method Not Allowed\r\n\r\n'
+                self.wfile.write(bytes(Reply, 'utf-8'))
+                Mess_Type = ' Sent to '
+                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Reply)
             else:
-                self.wfile.write(b'SIP/2.0 400 Bad Request\r\n\r\n')
+                Reply = 'SIP/2.0 400 Bad Request\r\n\r\n'
+                self.wfile.write(bytes(Reply, 'utf-8'))
+                Mess_Type = ' Sent to '
+                write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Reply)
 
 
 if __name__ == "__main__":
@@ -106,6 +129,7 @@ if __name__ == "__main__":
 
         serv = socketserver.UDPServer((UA_IP, UA_PORT), EchoHandler)
         print("Listening...")
+        write_Log(LOG_FILE, '','', ' Starting... ','')
         serv.serve_forever()
 
     except KeyboardInterrupt:

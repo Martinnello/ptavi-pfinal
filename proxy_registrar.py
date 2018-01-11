@@ -189,20 +189,13 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                         Destiny_ip = Destiny_Info[0]
                         Destiny_port = int(Destiny_Info[1])
 
-                        try:
-                            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as proxy_socket:
-                                proxy_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                                proxy_socket.connect((Destiny_ip, Destiny_port))
-                                proxy_socket.send(bytes(Message, 'utf-8'))
-                                Mess_Type = ' Sent to '
-                                write_Log(LOG_FILE, Destiny_ip, Destiny_port, Mess_Type, Message)
-
-                        except ConnectionRefusedError:
-                            Error =  ('No server listening at '
-                                      + ip + ' port ' + str(port))
-                            Mess_Type = ' Error: '
-                            write_Log(LOG_FILE, ip, port, Mess_Type, Error)
-                            sys.exit('Error: ' + Error)
+                    try:
+                        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as proxy_socket:
+                            proxy_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                            proxy_socket.connect((Destiny_ip, Destiny_port))
+                            proxy_socket.send(bytes(Message, 'utf-8'))
+                            Mess_Type = ' Sent to '
+                            write_Log(LOG_FILE, Destiny_ip, Destiny_port, Mess_Type, Message)
 
                     else:
 

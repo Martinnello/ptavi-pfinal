@@ -37,7 +37,7 @@ if __name__ == "__main__":
     PASS = Config['account_passwd']
     UA_IP = Config['uaserver_ip']
     UA_PORT = int(Config['uaserver_puerto'])
-    RTP_PORT = int(Config['rtpaudio_puerto'])
+    RTP_PORT = Config['rtpaudio_puerto']
     REGPROXY_IP = Config['regproxy_ip']
     REGPROXY_PORT = int(Config['regproxy_puerto'])
     LOG_FILE = Config['log_path']
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n')
         SDP = ("Content-Type: application/sdp\r\n\r\n" + 'v=0\r\n')
         SDP += ('o=' + USER + ' ' + UA_IP + '\r\n' + 's=LiveSesion\r\n')
-        SDP += ('t=0\r\n' + 'm=audio ' + str(RTP_PORT) + ' RTP\r\n\r\n')
+        SDP += ('t=0\r\n' + 'm=audio ' + RTP_PORT + ' RTP\r\n\r\n')
         Mess += SDP
         print(Mess)
 
@@ -101,17 +101,13 @@ if __name__ == "__main__":
                 my_socket.send(bytes(Mess, 'utf-8'))
                 Mess_Type = ' Sent to '
                 write_Log(LOG_FILE, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
-                #data = my_socket.recv(1024)
-                #Recv = data.decode('utf-8')
-                #Reply = Recv.split()
-                #METHOD = Reply[0]
                 
                 print('\r\n\r\n')
-                Exe = './mp32rtp -i 127.0.0.1 -p ' + str(RTP_PORT) + ' < ' + AUDIO_FILE
+                Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO_FILE
                 print("Ejecutando...   ", Exe)
                 os.system(Exe)
-
-                #Ejecutando rtp...
+                Mess_Type = ' Envio RTP... '
+                write_Log(LOG_FILE, '', '', Mess_Type, '')
 
         write_Log(LOG_FILE, '','', ' Finishing.','')
 
