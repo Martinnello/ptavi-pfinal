@@ -39,8 +39,8 @@ if __name__ == "__main__":
     UA_IP = Config['uaserver_ip']
     UA_PORT = int(Config['uaserver_puerto'])
     RTP = Config['rtpaudio_puerto']
-    REGPROXY_IP = Config['regproxy_ip']
-    REGPROXY_PORT = int(Config['regproxy_puerto'])
+    PROXY_IP = Config['PROXY_IP']
+    PROXY_PORT = int(Config['PROXY_puerto'])
     LOG = Config['log_path']
     AUDIO = Config['audio_path']
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
         my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        my_socket.connect((REGPROXY_IP, REGPROXY_PORT))
+        my_socket.connect((PROXY_IP, PROXY_PORT))
         write_Log(LOG, '','', ' Starting... ','Client')
 
         METHODS = ['REGISTER', 'INVITE', 'BYE']
@@ -59,7 +59,7 @@ if __name__ == "__main__":
             print('Sent: \r\n' + Mess)
             my_socket.send(bytes(Mess, 'utf-8'))
             Mess_Type = ' Sent to '
-            write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
+            write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Mess)
 
             try:
                 data = my_socket.recv(1024)
@@ -67,7 +67,7 @@ if __name__ == "__main__":
                 Reply = Recv.split()
                 print('Received:\r\n' + Recv)
                 Mess_Type = ' Received from '
-                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Recv)
+                write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Recv)
 
                 if Reply[1] == '401':
                     Nonce = Reply[-1].split('=')[1]
@@ -79,16 +79,16 @@ if __name__ == "__main__":
                     Mess += 'Authorization: Digest responce=' + Decryp
                     my_socket.send(bytes(Mess, 'utf-8'))
                     Mess_Type = ' Sent to '
-                    write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
+                    write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Mess)
 
                     data = my_socket.recv(1024)
                     Recv = data.decode('utf-8')
                     Mess_Type = ' Received from '
-                    write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Recv)
+                    write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Recv)
 
             except ConnectionRefusedError:
-                Error =  ('No server listening at '
-                              + REGPROXY_IP + ' port ' + str(REGPROXY_PORT))
+                Error = ('No server listening at ' + PROXY_IP)
+                Error += (' port ' + str(PROXY_PORT))
                 write_Log(LOG, '', '', ' Error: ', Error)
                 write_Log(LOG, '','', ' Finishing ','Client')
                 sys.exit('Error: ' + Error)
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             Mess += SDP
             my_socket.send(bytes(Mess, 'utf-8'))
             Mess_Type = ' Sent to '
-            write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
+            write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Mess)
             print('Sent: \r\n' + Mess)
 
             try:
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                     Mess = ('ACK' + ' sip:' + OPTION + ' SIP/2.0\r\n\r\n')
                     my_socket.send(bytes(Mess, 'utf-8'))
                     Mess_Type = ' Sent to '
-                    write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
+                    write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Mess)
                     
                     Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP + ' < ' + AUDIO
                     print("Ejecutando...   ", Exe)
@@ -137,8 +137,8 @@ if __name__ == "__main__":
                     sys.exit('Error: User Not Found')
 
             except ConnectionRefusedError:
-                Error =  ('No server listening at '
-                              + REGPROXY_IP + ' port ' + str(REGPROXY_PORT))
+                Error = ('No server listening at ' + PROXY_IP)
+                Error += (' port ' + str(PROXY_PORT))
                 write_Log(LOG, '', '', ' Error: ', Error)
                 write_Log(LOG, '','', ' Finishing ','Client')
                 sys.exit('Error: ' + Error)
@@ -151,7 +151,7 @@ if __name__ == "__main__":
                 sys.exit('Error: ' + Error)
 
             
-            write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Recv)
+            write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Recv)
 
 
         elif METHOD == "BYE":
@@ -159,7 +159,7 @@ if __name__ == "__main__":
             print('Sent: \r\n' + Mess)
             my_socket.send(bytes(Mess, 'utf-8'))
             Mess_Type = ' Sent to '
-            write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
+            write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Mess)
 
             try:
                 data = my_socket.recv(1024)
@@ -167,12 +167,11 @@ if __name__ == "__main__":
                 Reply = Recv.split()
                 print('Received:\r\n' + Recv)
                 Mess_Type = ' Received from '
-                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Recv)
+                write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Recv)
 
             except ConnectionRefusedError:
-                
-                Error =  ('No server listening at '
-                              + REGPROXY_IP + ' port ' + str(REGPROXY_PORT))
+                Error = ('No server listening at ' + PROXY_IP)
+                Error += (' port ' + str(PROXY_PORT))
                 write_Log(LOG, '', '', ' Error: ', Error)
                 write_Log(LOG, '','', ' Finishing ','Client')
                 sys.exit('Error: ' + Error)
@@ -185,8 +184,7 @@ if __name__ == "__main__":
         write_Log(LOG, '','', ' Finishing ','Client')
 
     except ConnectionRefusedError:
-        Error =  ('No server listening at '
-                  + ip + ' port ' + str(port))
+        Error =  ('No server listening at ' + ip + ' port ' + str(port))
         Mess_Type = ' Error: '
         write_Log(LOG, ip, port, Mess_Type, Error)
         sys.exit('Error: ' + Error)
