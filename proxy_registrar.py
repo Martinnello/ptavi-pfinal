@@ -67,7 +67,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
     Chain = {} 
     Nonce = []
 
-    """See if database.json exist."""
+    """See if database.txt exist."""
     def create_database(self):
         try:
             with open(DATABASE, 'r') as jsonfile:
@@ -76,12 +76,12 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             pass
 
 
-    """Make/Update database.json file."""
+    """Make/Update database.txt file."""
     def database_update(self):
         with open(DATABASE, 'w') as jsonfile:
             json.dump(self.Users, jsonfile, indent = 2)
 
-
+    """Load passwords of passwords.txt file."""
     def passwords(self):
         try:
             with open(PASS, 'r') as jsonfile:
@@ -130,9 +130,9 @@ class EchoHandler(socketserver.DatagramRequestHandler):
         Del_List = []
 
         for user in self.Users:
-            Date = int(self.Users[user][-1])
+            Date = self.Users[user].split()
+            Date = float(Date[-1])
             if Date <= Time:
-                print(user)
                 Del_List.append(user)
 
         for user in Del_List:
@@ -150,7 +150,6 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             Src_ip = self.client_address[0]
             Src_port = self.client_address[1]
             UA_name = Src_Info[1].split(':')[1]
-            print(Src_Info)
             
             Mess_Type = ' Received from '
             write_Log(LOG, Src_ip, Src_port, Mess_Type, Message)
@@ -164,10 +163,17 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 EXPIRES = (int(Src_Info[4]) + Time)
                 UAserver_PORT = Src_Info[1].split(':')[2]
 
-                if Src_Info[4] == 0:
-                    del self.Users[UA_name]
-                    Reply = 'SIP/2.0 200 OK\r\n\r\n'
-                    self.wfile.write(bytes(Reply, 'utf-8'))
+                if Src_Info[4] == '0':
+                    try:
+                        del self.Users[UA_name]
+                        Reply = 'SIP/2.0 200 OK\r\n\r\n'
+                        self.wfile.write(bytes(Reply, 'utf-8'))
+                    except KeyError:
+                        Error =  ('User server is not connected! ')
+                        Mess_Type = ' Error: '
+                        write_Log(LOG, '', '', Mess_Type, Error)
+                        write_Log(LOG, '','', ' Finishing ','Client')
+                        sys.exit('Error: ' + Error)
                         
                 else:
                     if len(Src_Info) == 5:
