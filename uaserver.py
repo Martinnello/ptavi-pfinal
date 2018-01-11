@@ -78,7 +78,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, OK + SDP)
 
             elif METHOD == 'ACK':
-                Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO_FILE
+                Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO
                 print("Ejecutando...   ", Exe)
                 os.system(Exe)
                 Mess_Type = ' Envio RTP...'
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     REGPROXY_IP = Config['regproxy_ip']
     REGPROXY_PORT = int(Config['regproxy_puerto'])
     LOG = Config['log_path']
-    AUDIO_FILE = Config['audio_path'] 
+    AUDIO = Config['audio_path'] 
 
     try:
 
