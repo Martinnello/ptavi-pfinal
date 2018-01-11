@@ -6,6 +6,7 @@
 import os
 import sys
 import socket
+import hashlib
 from uaserver import XmlHandler
 from proxy_registrar import write_Log
 from xml.sax import make_parser
@@ -106,6 +107,28 @@ if __name__ == "__main__":
 
             try:
                 data = my_socket.recv(1024)
+                Recv = data.decode('utf-8')
+                Reply = Recv.split()
+                print('Received:\r\n' + Recv)
+                Mess_Type = ' Received from '
+
+                if Reply[1] == "100" and Reply[4] == "180" and Reply[7] == "200":
+                    Mess = ('ACK' + ' sip:' + OPTION + ' SIP/2.0\r\n\r\n')
+                    my_socket.send(bytes(Mess, 'utf-8'))
+                    Mess_Type = ' Sent to '
+                    write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
+                    
+                    Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO
+                    print("Ejecutando...   ", Exe)
+                    os.system(Exe)
+                    Mess_Type = ' Envio RTP...'
+                    write_Log(LOG, '', '', Mess_Type, '')
+
+                elif Reply[1] == '404':
+                    write_Log(LOG, '', '', ' Error: ', Recv)
+                    write_Log(LOG, '','', ' Finishing ','Client')
+                    sys.exit('Error: User Not Found')
+
             except ConnectionRefusedError:
                 Error =  ('No server listening at '
                               + REGPROXY_IP + ' port ' + str(REGPROXY_PORT))
@@ -113,28 +136,16 @@ if __name__ == "__main__":
                 write_Log(LOG, '','', ' Finishing ','Client')
                 sys.exit('Error: ' + Error)
 
-            Recv = data.decode('utf-8')
-            Reply = Recv.split()
-            print('Received:\r\n' + Recv)
-            Mess_Type = ' Received from '
+            except IndexError:
+                Error =  ('User server is not connected! ')
+                Mess_Type = ' Error: '
+                write_Log(LOG, '', '', Mess_Type, Error)
+                write_Log(LOG, '','', ' Finishing ','Client')
+                sys.exit('Error: ' + Error)
+
+            
             write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Recv)
 
-            if Reply[1] == "100" and Reply[4] == "180" and Reply[7] == "200":
-                Mess = ('ACK' + ' sip:' + OPTION + ' SIP/2.0\r\n\r\n')
-                my_socket.send(bytes(Mess, 'utf-8'))
-                Mess_Type = ' Sent to '
-                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Mess)
-                
-                Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO
-                print("Ejecutando...   ", Exe)
-                os.system(Exe)
-                Mess_Type = ' Envio RTP...'
-                write_Log(LOG, '', '', Mess_Type, '')
-
-            elif Reply[1] == '404':
-                write_Log(LOG, '', '', ' Error: ', Recv)
-                write_Log(LOG, '','', ' Finishing ','Client')
-                sys.exit('Error: User Not Found')
 
         elif METHOD == "BYE":
             Mess = (METHOD + ' sip:' + OPTION + ' SIP/2.0\r\n\r\n')
@@ -171,5 +182,3 @@ if __name__ == "__main__":
         Mess_Type = ' Error: '
         write_Log(LOG, ip, port, Mess_Type, Error)
         sys.exit('Error: ' + Error)
-
-        

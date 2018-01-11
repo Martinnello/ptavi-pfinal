@@ -7,6 +7,7 @@ import os
 import sys
 import json
 import time
+import random
 import hashlib
 import socket
 import socketserver
@@ -63,6 +64,7 @@ def write_Log(file, ip, port, mess_type, message):
 class EchoHandler(socketserver.DatagramRequestHandler):
     
     Users = {}
+    Chain = {} 
     Nonce = []
 
     """See if database.json exist."""
@@ -78,6 +80,14 @@ class EchoHandler(socketserver.DatagramRequestHandler):
     def database_update(self):
         with open(DATABASE, 'w') as jsonfile:
             json.dump(self.Users, jsonfile, indent = 2)
+
+
+    def passwords(self):
+        try:
+            with open(PASS, 'r') as jsonfile:
+                self.Chain = json.load(jsonfile)
+        except FileNotFoundError:
+            sys.exit('File Not Found!')
 
 
     """Resent the message from proxy to Dst waiting response"""
@@ -115,6 +125,20 @@ class EchoHandler(socketserver.DatagramRequestHandler):
     def handle(self):
         
         self.create_database()
+        self.passwords()
+        Time = time.time()
+        Del_List = []
+
+        for user in self.Users:
+            Date = int(self.Users[user][-1])
+            if Date <= Time:
+                print(user)
+                Del_List.append(user)
+
+        for user in Del_List:
+            del self.Users[user]
+
+        self.database_update()
 
         while 1:
             Lines = self.rfile.read()
@@ -126,6 +150,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             Src_ip = self.client_address[0]
             Src_port = self.client_address[1]
             UA_name = Src_Info[1].split(':')[1]
+            print(Src_Info)
             
             Mess_Type = ' Received from '
             write_Log(LOG, Src_ip, Src_port, Mess_Type, Message)
@@ -136,11 +161,10 @@ class EchoHandler(socketserver.DatagramRequestHandler):
 
             if METHOD == 'REGISTER':
                 
-                Time = time.time()
-                EXPIRES = Src_Info[4]
+                EXPIRES = (int(Src_Info[4]) + Time)
                 UAserver_PORT = Src_Info[1].split(':')[2]
 
-                if int(EXPIRES) == 0:
+                if Src_Info[4] == 0:
                     del self.Users[UA_name]
                     Reply = 'SIP/2.0 200 OK\r\n\r\n'
                     self.wfile.write(bytes(Reply, 'utf-8'))
@@ -152,18 +176,27 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                         Reply += 'WWW-Authenticate: Digest nonce='
                         Reply += self.Nonce[0] + '\r\n\r\n'
                         self.wfile.write(bytes(Reply, 'utf-8'))
+                        Mess_Type = ' Sent to '
+                        write_Log(LOG, Src_ip, Src_port, Mess_Type, Reply)
 
-                    if len(Src_Info) == 10:
-                        self.Users[UA_name] = (Src_ip + ' ' 
+                    elif len(Src_Info) == 8:
+                        Password = self.Chain[UA_name]
+                        Encryp = hashlib.sha1()
+                        Encryp.update(bytes(self.Nonce[0], 'utf-8'))
+                        Encryp.update(bytes(Password, 'utf-8'))
+                        Encryp = Encryp.hexdigest()
+                        Key = Src_Info[-1].split("=")[1]
+                        if Encryp == Key:
+                            self.Users[UA_name] = (Src_ip + ' ' 
                                             + str(UAserver_PORT) + ' ' 
-                                            + str(Time) + ' ' + EXPIRES)
+                                            + str(Time) + ' ' + str(EXPIRES))
 
-                        Reply = 'SIP/2.0 200 OK\r\n\r\n'
-                        self.wfile.write(bytes(Reply, 'utf-8'))
+                            Reply = 'SIP/2.0 200 OK\r\n\r\n'
+                            self.wfile.write(bytes(Reply, 'utf-8'))
+                            Mess_Type = ' Sent to '
+                            write_Log(LOG, Src_ip, Src_port, Mess_Type, Reply)
 
                 self.database_update()
-                Mess_Type = ' Sent to '
-                write_Log(LOG, Src_ip, Src_port, Mess_Type, Reply)
 
             elif METHOD == 'INVITE':
                 
@@ -233,6 +266,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 self.wfile.write(bytes(Reply, 'utf-8'))
                 Mess_Type = ' Sent to '
                 write_Log(LOG, Src_ip, Src_port, Mess_Type, Reply)
+
 
 if __name__ == "__main__":
 
