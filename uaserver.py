@@ -37,7 +37,7 @@ class XmlHandler(ContentHandler):
 
 class EchoHandler(socketserver.DatagramRequestHandler):
     """Client handler requests."""
-    
+
     RTP_Listen = []
 
     def handle(self):
@@ -58,7 +58,6 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             write_Log(LOG, Source_ip, Source_port, Mess_Type, Message)
 
             if METHOD == 'INVITE':
-                
                 self.RTP_Listen.append(Info[-2])
 
                 Call = 'SIP/2.0 100 Trying\r\n\r\n'

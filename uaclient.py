@@ -126,7 +126,8 @@ if __name__ == "__main__":
                     Mess_Type = ' Sent to '
                     write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Mess)
 
-                    Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_Listen + ' < ' + AUDIO
+                    Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_Listen
+                    Exe += ' < ' + AUDIO
                     print("Ejecutando...   ", Exe)
                     os.system(Exe)
 
