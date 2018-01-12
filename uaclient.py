@@ -124,9 +124,14 @@ if __name__ == "__main__":
                     Mess_Type = ' Sent to '
                     write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Mess)
 
+                    Cvlc = 'cvlc rtp://@' + '127.0.0.1' + ':' + RTP
+                    print("Ejecutando...   ", Cvlc)
+                    os.system(Cvlc)
+
                     Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP + ' < ' + AUDIO
                     print("Ejecutando...   ", Exe)
                     os.system(Exe)
+
                     Mess_Type = ' Envio RTP...'
                     write_Log(LOG, '', '', Mess_Type, '')
 

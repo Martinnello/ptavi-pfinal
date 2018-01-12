@@ -1,2 +1,8 @@
+- Comando (c)vlc añadido.
 - Los usuarios se establecen al reiniciar la sesión o si su expire a caducado se eliminan.
-- El servidor proxy registrar reenvia las solicitudes que le llegan comprobando antes los datos del source y del destiny. y viendo si están en su diccionario.
+- El servidor proxy registrar reenvía las solicitudes que le llegan comprobando antes los datos del source y del destiny y viendo si están en su diccionario.
+
+
+- Me hubiera gustado realizar todos los extras Gregorio pero me ha faltado tiempo.
+  Muchas gracias por este año y todo lo que he aprendido contigo, con profesores que
+  motivan y enseñan así, da gusto venir a la Universidad. Un saludo!

@@ -71,9 +71,14 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, OK + SDP)
 
             elif METHOD == 'ACK':
+                Cvlc = 'cvlc rtp://@' + '127.0.0.1' + ':' + RTP_PORT
+                print("Ejecutando...   ", Cvlc)
+                os.system(Cvlc)
+
                 Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO
                 print("Ejecutando...   ", Exe)
                 os.system(Exe)
+
                 Mess_Type = ' Envio RTP...'
                 write_Log(LOG, '', '', Mess_Type, '')
 
