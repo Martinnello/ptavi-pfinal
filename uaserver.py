@@ -57,23 +57,16 @@ class EchoHandler(socketserver.DatagramRequestHandler):
 
             if METHOD == 'INVITE':
 
-                Trying = 'SIP/2.0 100 Trying\r\n'
-                self.wfile.write(bytes(Trying, 'utf-8'))
-                Mess_Type = ' Sent to '
-                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Trying)
-
-                Ringing = 'SIP/2.0 180 Ringing\r\n'
-                self.wfile.write(bytes(Ringing, 'utf-8'))
-                Mess_Type = ' Sent to '
-                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Ringing)
-
-                OK = 'SIP/2.0 200 OK\r\n\r\n'
+                Call = 'SIP/2.0 100 Trying\r\n\r\n'
+                Call += 'SIP/2.0 180 Ringing\r\n\r\n'
+                Call += 'SIP/2.0 200 OK\r\n\r\n'
                 SDP = ("Content-Type: application/sdp\r\n\r\n")
                 SDP += ('v=0\r\n' + "o=" + USER + ' ' + UA_IP + '\r\n')
                 SDP += ('s=LiveSesion\r\n' + 't=0\r\n' + 'm=audio ')
                 SDP += RTP_PORT + ' RTP\r\n\r\n'
+                Call += SDP
 
-                self.wfile.write(bytes(OK + SDP, 'utf-8'))
+                self.wfile.write(bytes(Call, 'utf-8'))
                 Mess_Type = ' Sent to '
                 write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, OK + SDP)
 
