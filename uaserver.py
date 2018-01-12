@@ -37,6 +37,8 @@ class XmlHandler(ContentHandler):
 
 class EchoHandler(socketserver.DatagramRequestHandler):
     """Client handler requests."""
+    
+    RTP_Listen = []
 
     def handle(self):
         """Recieve & Sent SIP Messages."""
@@ -56,6 +58,8 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             write_Log(LOG, Source_ip, Source_port, Mess_Type, Message)
 
             if METHOD == 'INVITE':
+                
+                self.RTP_Listen.append(Info[-2])
 
                 Call = 'SIP/2.0 100 Trying\r\n\r\n'
                 Call += 'SIP/2.0 180 Ringing\r\n\r\n'
@@ -68,16 +72,17 @@ class EchoHandler(socketserver.DatagramRequestHandler):
 
                 self.wfile.write(bytes(Call, 'utf-8'))
                 Mess_Type = ' Sent to '
-                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, OK + SDP)
+                write_Log(LOG, REGPROXY_IP, REGPROXY_PORT, Mess_Type, Call)
 
             elif METHOD == 'ACK':
-                Cvlc = 'cvlc rtp://@' + '127.0.0.1' + ':' + RTP_PORT
-                print("Ejecutando...   ", Cvlc)
-                os.system(Cvlc)
-
-                Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_PORT + ' < ' + AUDIO
+                Exe = './mp32rtp -i 127.0.0.1 -p ' + self.RTP_Listen[0]
+                Exe += ' < ' + AUDIO
                 print("Ejecutando...   ", Exe)
                 os.system(Exe)
+
+                Cvlc = 'cvlc rtp://@' + '127.0.0.1' + ':' + self.RTP_Listen[0]
+                print("Ejecutando...   ", Cvlc)
+                os.system(Cvlc)
 
                 Mess_Type = ' Envio RTP...'
                 write_Log(LOG, '', '', Mess_Type, '')

@@ -119,18 +119,20 @@ if __name__ == "__main__":
                 Mess_Type = ' Received from '
 
                 if Reply[1] == "100" and Reply[7] == "200":
+                    RTP_Listen = Reply[-2]
+
                     Mess = ('ACK' + ' sip:' + OPTION + ' SIP/2.0\r\n\r\n')
                     my_socket.send(bytes(Mess, 'utf-8'))
                     Mess_Type = ' Sent to '
                     write_Log(LOG, PROXY_IP, PROXY_PORT, Mess_Type, Mess)
 
-                    Cvlc = 'cvlc rtp://@' + '127.0.0.1' + ':' + RTP
-                    print("Ejecutando...   ", Cvlc)
-                    os.system(Cvlc)
-
-                    Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP + ' < ' + AUDIO
+                    Exe = './mp32rtp -i 127.0.0.1 -p ' + RTP_Listen + ' < ' + AUDIO
                     print("Ejecutando...   ", Exe)
                     os.system(Exe)
+
+                    Cvlc = 'cvlc rtp://@' + '127.0.0.1' + ':' + RTP_Listen
+                    print("Ejecutando...   ", Cvlc)
+                    os.system(Cvlc)
 
                     Mess_Type = ' Envio RTP...'
                     write_Log(LOG, '', '', Mess_Type, '')
